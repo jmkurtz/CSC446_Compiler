@@ -34,7 +34,8 @@ namespace JavaCompiler
                 lexeme = lex.Lexeme,
                 value = lex.Value,
                 valueR = lex.ValueR,
-                lineNumber = lex.LineNumber
+                lineNumber = lex.LineNumber,
+                literal = lex.Literal
             });
         }
 
@@ -47,15 +48,16 @@ namespace JavaCompiler
         public static void View()
         {
             int i = 0;
-            Console.WriteLine("{0, -10} | {1,-20} | {2,-5} | {3,-7} | {4,-5}", "TOKEN", "LEXEME", "VALUE", "VALUER", "LINE NUMBER");
+            Console.WriteLine("{0, -10} | {1,-20} | {2,-5} | {3,-7} | {4,-7} | {5,-5}", "TOKEN", "LEXEME", "VALUE", "VALUER", "LITERAL", "LINE NUMBER");
             Console.WriteLine(new string('_', 70));
             Console.WriteLine();
             foreach(var t in AllTokens)
             {
                 string v = t.value == 0 ? "-" : t.value.ToString();
                 string vR = t.valueR == 0 ? "-" : t.valueR.ToString();
+                string l = t.literal == "" ? "-" : t.literal;
 
-                Console.WriteLine("{0,-10} | {1,-20} | {2,-5} | {3,-7} | {4,-5}", t.token.ToString(), t.lexeme.ToString(), v, vR, t.lineNumber);
+                Console.WriteLine("{0,-10} | {1,-20} | {2,-5} | {3,-7} | {4,-7} | {5,-5}", t.token.ToString(), t.lexeme.ToString(), v, vR, l, t.lineNumber);
 
                 if (i > 15)
                 {
@@ -79,5 +81,6 @@ namespace JavaCompiler
         public int value;
         public double valueR;
         public int lineNumber;
+        public string literal;
     }
 }

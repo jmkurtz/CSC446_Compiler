@@ -30,6 +30,11 @@ namespace JavaCompiler
         public double ValueR { get; set; } = 0;
 
         /// <summary>
+        /// Public global variable stores the literal value
+        /// </summary>
+        public string Literal { get; set; } = "";
+
+        /// <summary>
         /// Public global variable stores the current line number
         /// </summary>
         public int LineNumber { get; set; } = 1;
@@ -47,7 +52,7 @@ namespace JavaCompiler
         /// <summary>
         /// Private global bool that is flipped when in a string literal
         /// </summary>
-        private bool literal { get; set; } = false;
+        private bool literalBool { get; set; } = false;
 
         /// <summary>
         /// Public enum that stores all the possible tokens needed
@@ -65,11 +70,10 @@ namespace JavaCompiler
             returnT, //Return
             intT, //Integer
             booleanT, //Boolean
-            realT,
+            realT, //Real
             ifT, //If
             elseT, //Else
             idT, //Identifier
-            modopT, //Modulus Operator
             whileT, //While
             printT, //Print.out.println
             lengthT, //Length
@@ -77,10 +81,8 @@ namespace JavaCompiler
             falseT, //False
             thisT, //This
             newT, //New
-            notT, //Not
             addopT, //Add Operator
             mulopT, //Multiply Operator
-            divopT, //Division Operator
             commaT, //Comma
             rbracketT, //Right Bracket
             lbracketT, //Left Bracket
@@ -90,20 +92,13 @@ namespace JavaCompiler
             rcurlyT, //Right Curly Bracket
             lcurlyT, //Left Curly Bracket
             semiT, //Semi Colon
-            equalT, //Equals
+            assignopT, //Equals
             eofT, //End of File
-            ltoetT, //Less than or equal to
-            gtoetT, //Greater than or equal to
-            ltT, //Less than
-            gtT, //Greater than
-            compareT, //Compare (==)
-            doubleT, //Double
+            relopT, //Relative Operatore
             numT, //Number
             unknownT, //Unknown
             periodT, //Period
             quoteT, //Quotations
-            andT, //AND operator
-            orT, //OR operator
         }
 
         /// <summary>
@@ -133,6 +128,7 @@ namespace JavaCompiler
             Lexeme = "";
             Value = 0;
             ValueR = 0;
+            Literal = "";
         }
 
         /// <summary>
@@ -144,15 +140,18 @@ namespace JavaCompiler
         /// </summary>
         public void GetNextToken()
         {
-            if(this.location >= file.Length)
+            ResetToken();
+
+            if (this.location >= file.Length)
             {
                 Token = Tokens.eofT;
-                ResetToken();
             }
             else
             {
                 while (true)
                 {
+                    if (this.location >= file.Length)
+                        return;
                     if (file[this.location] == '\n')
                     {
                         this.location++;
@@ -164,7 +163,7 @@ namespace JavaCompiler
                         break;
                 }
 
-                ProcessToken() ;
+                ProcessToken();
             }
         }
 
@@ -178,15 +177,10 @@ namespace JavaCompiler
         /// <param name="newLine"></param>
         private void GetNextCh(bool newLine = false)
         {
-            if(this.location+1 >= file.Length)
-            {
+            if(this.location+1 > file.Length)
                 Token = Tokens.eofT;
-                ResetToken();
-            }
             else
-            {
                 this.location++;
-            }
 
             if(!newLine)
             {
@@ -211,18 +205,14 @@ namespace JavaCompiler
             char ch = file[this.location];
             char nextCh = this.location+1 >= file.Length ? '\0' : file[this.location+1];
 
-            if (Char.IsLetter(ch))
-            {
+            if (Char.IsLetter(ch) && literalBool == true)
+                ProcessLiteralToken();
+            else if (Char.IsLetter(ch) && literalBool != true)
                 ProcessWordToken();
-            }
             else if (Char.IsDigit(ch) || (ch == '.' && Char.IsDigit(nextCh)))
-            {
                 ProcessNumToken();
-            }
             else if (!Char.IsLetterOrDigit(ch))
-            {
                 ProcessSymbolToken();
-            }
         }
 
         /// <summary>
@@ -240,10 +230,7 @@ namespace JavaCompiler
 
                 GetNextCh();
                 if (this.location >= file.Length)
-                {
                     Token = Tokens.eofT;
-                    ResetToken();
-                }
             }
                 
             this.location += 2;
@@ -264,7 +251,6 @@ namespace JavaCompiler
                 if (this.location+1 >= file.Length)
                 {
                     Token = Tokens.eofT;
-                    ResetToken();
                     return;
                 }
                     
@@ -281,10 +267,11 @@ namespace JavaCompiler
         /// </summary>
         private void ProcessSymbolToken()
         {
+            char nextCh = (this.location + 1) < file.Length ? file[this.location + 1] : '\0';
             Lexeme += file[this.location];
-            if(this.location + 1 < file.Length)
-                if (file[this.location + 1] == '/' || file[this.location + 1] == '*' || file[this.location + 1] == '=' || file[this.location + 1] == '&' || file[this.location + 1] == '|')
-                    Lexeme += file[this.location + 1];
+
+            if (nextCh == '/' || nextCh == '*' || nextCh == '=' || nextCh == '&' || nextCh == '|')
+                Lexeme += file[this.location + 1];
 
             switch (Lexeme)
             {
@@ -295,17 +282,17 @@ namespace JavaCompiler
                     ProcessMultiComment();
                     break;
                 case "==":
-                    Token = Tokens.compareT;
+                    Token = Tokens.relopT;
                     Lexeme = "==";
                     this.location += 2;
                     break;
                 case ">=":
-                    Token = Tokens.gtoetT;
+                    Token = Tokens.relopT;
                     Lexeme = ">=";
                     this.location += 2;
                     break;
                 case "<=":
-                    Token = Tokens.ltoetT;
+                    Token = Tokens.relopT;
                     Lexeme = "<=";
                     this.location += 2;
                     break;
@@ -315,25 +302,25 @@ namespace JavaCompiler
                     this.location += 2;
                     break;
                 case "&&":
-                    Token = Tokens.andT;
+                    Token = Tokens.mulopT;
                     Lexeme = "&&";
                     this.location += 2;
                     break;
                 case "||":
-                    Token = Tokens.orT;
+                    Token = Tokens.addopT;
                     Lexeme = "!=";
                     this.location += 2;
                     break;
                 case "=":
-                    Token = Tokens.equalT;
+                    Token = Tokens.assignopT;
                     GetNextCh();
                     break;
                 case "<":
-                    Token = Tokens.ltT;
+                    Token = Tokens.relopT;
                     GetNextCh();
                     break;
                 case ">":
-                    Token = Tokens.gtT;
+                    Token = Tokens.relopT;
                     GetNextCh();
                     break;
                 case "(":
@@ -386,21 +373,13 @@ namespace JavaCompiler
                     Lexeme = "*";
                     break;
                 case "/":
-                    Token = Tokens.divopT;
-                    GetNextCh();
-                    break;
-                case "%":
-                    Token = Tokens.modopT;
-                    GetNextCh();
-                    break;
-                case "!":
-                    Token = Tokens.notT;
+                    Token = Tokens.mulopT;
                     GetNextCh();
                     break;
                 case "\"":
                     Token = Tokens.quoteT;
                     GetNextCh();
-                    literal = literal ? false : true;
+                    literalBool = literalBool ? false : true;
                     break;
                 default:
                     Token = Tokens.unknownT;
@@ -450,6 +429,27 @@ namespace JavaCompiler
             
         }
 
+        private void ProcessLiteralToken()
+        {
+            while (file[this.location] != '"' && file[this.location] != '\n' && Token != Tokens.eofT)
+            {
+                Lexeme += file[this.location];
+                GetNextCh();
+            }
+
+            Lexeme = Lexeme.TrimEnd();
+
+            if (file[this.location] == '\n')
+                literalBool = false;
+            if (Token != Tokens.eofT)
+            {
+                Token = Tokens.strlitT;
+                Literal = Lexeme;
+            }
+                
+            return;
+        }
+
         /// <summary>
         /// Name: ProcessWordToken
         /// Input: N/A
@@ -458,36 +458,17 @@ namespace JavaCompiler
         /// </summary>
         private void ProcessWordToken()
         {
-            if(literal == true)
+            while (Char.IsLetterOrDigit(file[this.location]) || file[this.location] == '_')
             {
-                while (file[this.location] != '"' && file[this.location] != '\n' && Token != Tokens.eofT)
-                {
-                    Lexeme += file[this.location];
-                    GetNextCh();
-                }
-
-                Lexeme = Lexeme.TrimEnd();
-
-                if (file[this.location] == '\n')
-                    literal = false;
-                if(Token != Tokens.eofT)
-                    Token = Tokens.strlitT;
-                return;
+                Lexeme += file[this.location];
+                GetNextCh();
             }
-            else
+            if(Lexeme == "System")
             {
-                while (Char.IsLetterOrDigit(file[this.location]) || file[this.location] == '_')
+                while(Char.IsLetterOrDigit(file[this.location]) || file[this.location] == '_' || file[this.location] == '.')
                 {
                     Lexeme += file[this.location];
                     GetNextCh();
-                }
-                if(Lexeme == "System")
-                {
-                    while(Char.IsLetterOrDigit(file[this.location]) || file[this.location] == '_' || file[this.location] == '.')
-                    {
-                        Lexeme += file[this.location];
-                        GetNextCh();
-                    }
                 }
             }
 
@@ -554,7 +535,7 @@ namespace JavaCompiler
                     Token = Tokens.realT;
                     break;
                 default:
-                    Token = Tokens.idT;
+                    Token = Lexeme.Length > 31 || literalBool == true ? Tokens.unknownT : Tokens.idT;
                     break;
 
             }
