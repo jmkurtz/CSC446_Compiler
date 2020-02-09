@@ -10,6 +10,16 @@ namespace JavaCompiler
 {
     class Program
     {
+        /// <summary>
+        /// 
+        /// PROJECT: Java Compiler 
+        /// Assignment: #1
+        /// Name: Jeff Kurtz
+        /// Description: Takes in java grammer and converts each character(s) to the proper token
+        /// and displays it to the user.
+        /// 
+        /// </summary>
+        /// <param name="args"></param>
         static void Main(string[] args)
         {
             string filepath = ArgsHandler(args);
@@ -27,7 +37,6 @@ namespace JavaCompiler
                 lexAnalyzer.ResetToken();
             }
 
-            ViewTokens.Add(lexAnalyzer);
             ViewTokens.View();
 
             Console.ReadKey();

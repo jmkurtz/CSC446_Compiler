@@ -21,12 +21,8 @@ namespace JavaCompiler
         /// <param name="lex"></param>
         public static void Add(LexicalAnalyzer lex)
         {
-            if(lex.Token == Tokens.unknownT)
+            if(lex.Token == Tokens.emptyT) 
                 return;
-
-            if(AllTokens.Count != 0)
-                if (AllTokens.Last().token == Tokens.eofT)
-                    return;
 
             AllTokens.Add(new TokenObject
             {

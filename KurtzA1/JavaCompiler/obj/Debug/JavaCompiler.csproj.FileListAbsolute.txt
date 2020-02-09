@@ -1,0 +1,18 @@
+C:\Repos\GitHub_Repos\CSC446_Compiler\JavaCompiler\JavaCompiler\bin\Debug\JavaCompiler.exe.config
+C:\Repos\GitHub_Repos\CSC446_Compiler\JavaCompiler\JavaCompiler\bin\Debug\JavaCompiler.exe
+C:\Repos\GitHub_Repos\CSC446_Compiler\JavaCompiler\JavaCompiler\bin\Debug\JavaCompiler.pdb
+C:\Repos\GitHub_Repos\CSC446_Compiler\JavaCompiler\JavaCompiler\obj\Debug\JavaCompiler.exe
+C:\Repos\GitHub_Repos\CSC446_Compiler\JavaCompiler\JavaCompiler\obj\Debug\JavaCompiler.pdb
+C:\Repos\GitHub_Repos\CSC446_Compiler\JavaCompiler\JavaCompiler\obj\Debug\JavaCompiler.csprojAssemblyReference.cache
+C:\Users\jeffm\OneDrive\CSC446 - Compiler Construction\A1_JKurtz\JavaCompiler\bin\Debug\JavaCompiler.exe.config
+C:\Users\jeffm\OneDrive\CSC446 - Compiler Construction\A1_JKurtz\JavaCompiler\bin\Debug\JavaCompiler.exe
+C:\Users\jeffm\OneDrive\CSC446 - Compiler Construction\A1_JKurtz\JavaCompiler\bin\Debug\JavaCompiler.pdb
+C:\Users\jeffm\OneDrive\CSC446 - Compiler Construction\A1_JKurtz\JavaCompiler\obj\Debug\JavaCompiler.csprojAssemblyReference.cache
+C:\Users\jeffm\OneDrive\CSC446 - Compiler Construction\A1_JKurtz\JavaCompiler\obj\Debug\JavaCompiler.exe
+C:\Users\jeffm\OneDrive\CSC446 - Compiler Construction\A1_JKurtz\JavaCompiler\obj\Debug\JavaCompiler.pdb
+C:\Users\jeffm\OneDrive\CSC446 - Compiler Construction\KurtzA1\JavaCompiler\bin\Debug\JavaCompiler.exe.config
+C:\Users\jeffm\OneDrive\CSC446 - Compiler Construction\KurtzA1\JavaCompiler\bin\Debug\JavaCompiler.exe
+C:\Users\jeffm\OneDrive\CSC446 - Compiler Construction\KurtzA1\JavaCompiler\bin\Debug\JavaCompiler.pdb
+C:\Users\jeffm\OneDrive\CSC446 - Compiler Construction\KurtzA1\JavaCompiler\obj\Debug\JavaCompiler.csprojAssemblyReference.cache
+C:\Users\jeffm\OneDrive\CSC446 - Compiler Construction\KurtzA1\JavaCompiler\obj\Debug\JavaCompiler.exe
+C:\Users\jeffm\OneDrive\CSC446 - Compiler Construction\KurtzA1\JavaCompiler\obj\Debug\JavaCompiler.pdb

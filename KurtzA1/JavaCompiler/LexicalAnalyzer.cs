@@ -12,7 +12,7 @@ namespace JavaCompiler
         /// <summary>
         /// Public global variable of type Token that is defaulted to an Unknown token
         /// </summary>
-        public Tokens Token { get; set; } = Tokens.unknownT;
+        public Tokens Token { get; set; } = Tokens.emptyT;
 
         /// <summary>
         /// Public global string that stores the contents of the token
@@ -48,11 +48,6 @@ namespace JavaCompiler
         /// Private global variable to refer to the current location in the file string
         /// </summary>
         private int location { get; set; } = 0;
-
-        /// <summary>
-        /// Private global bool that is flipped when in a string literal
-        /// </summary>
-        private bool literalBool { get; set; } = false;
 
         /// <summary>
         /// Public enum that stores all the possible tokens needed
@@ -99,6 +94,7 @@ namespace JavaCompiler
             unknownT, //Unknown
             periodT, //Period
             quoteT, //Quotations
+            emptyT //Inital Token
         }
 
         /// <summary>
@@ -124,7 +120,7 @@ namespace JavaCompiler
         public void ResetToken()
         {
             if(Token != Tokens.eofT)
-                Token = Tokens.unknownT;
+                Token = Tokens.emptyT;
             Lexeme = "";
             Value = 0;
             ValueR = 0;
@@ -141,30 +137,36 @@ namespace JavaCompiler
         public void GetNextToken()
         {
             ResetToken();
+            if(NextNotWhiteSpace())
+                ProcessToken();
+        }
 
-            if (this.location >= file.Length)
+        /// <summary>
+        /// Name: NextNotWhiteSpace
+        /// Input: N/A
+        /// Output: bool
+        /// Description: Helper function that runs prior to process token, and it
+        /// goes to the next space, handles a new line, and handles eof token
+        /// </summary>
+        /// <returns></returns>
+        public bool NextNotWhiteSpace()
+        {
+            while (this.location < file.Length && Char.IsWhiteSpace(file[this.location]))
+            {
+                if(file[this.location] == '\n')
+                {
+                    this.LineNumber++;
+                }
+                this.location++;
+            }
+
+            if(this.location >= file.Length)
             {
                 Token = Tokens.eofT;
+                return false;
             }
-            else
-            {
-                while (true)
-                {
-                    if (this.location >= file.Length)
-                        return;
-                    if (file[this.location] == '\n')
-                    {
-                        this.location++;
-                        this.LineNumber++;
-                    }
-                    else if (Char.IsWhiteSpace(file[this.location]))
-                        this.location++;
-                    else
-                        break;
-                }
 
-                ProcessToken();
-            }
+            return true;
         }
 
         /// <summary>
@@ -175,21 +177,11 @@ namespace JavaCompiler
         /// while also checking for various senarios
         /// </summary>
         /// <param name="newLine"></param>
-        private void GetNextCh(bool newLine = false)
+        private void GetNextCh(int inc = 1)
         {
-            if(this.location+1 > file.Length)
-                Token = Tokens.eofT;
-            else
-                this.location++;
-
-            if(!newLine)
+            if(this.location+1 < file.Length)
             {
-                if (this.location >= file.Length)
-                    return;
-                else if (file[this.location] == '\n')
-                    this.LineNumber++;
-                else
-                    return;
+                this.location += inc;
             }
         }
 
@@ -202,16 +194,11 @@ namespace JavaCompiler
         /// </summary>
         private void ProcessToken()
         {
-            char ch = file[this.location];
-            char nextCh = this.location+1 >= file.Length ? '\0' : file[this.location+1];
-
-            if (Char.IsLetter(ch) && literalBool == true)
-                ProcessLiteralToken();
-            else if (Char.IsLetter(ch) && literalBool != true)
+            if (Char.IsLetter(file[this.location]))
                 ProcessWordToken();
-            else if (Char.IsDigit(ch) || (ch == '.' && Char.IsDigit(nextCh)))
+            else if (Char.IsDigit(file[this.location]))
                 ProcessNumToken();
-            else if (!Char.IsLetterOrDigit(ch))
+            else if (!Char.IsLetterOrDigit(file[this.location]))
                 ProcessSymbolToken();
         }
 
@@ -225,16 +212,22 @@ namespace JavaCompiler
         {
             while (true)
             {
-                if (file[this.location] == '*' && file[this.location + 1] == '/')
+                if(this.location + 1 < file.Length)
+                    if (file[this.location] == '*' && file[this.location + 1] == '/')
+                    {
+                        GetNextCh(2);
+                        break;
+                    }
+                    else
+                    {
+                        GetNextCh();
+                    }
+                else
+                {
                     break;
-
-                GetNextCh();
-                if (this.location >= file.Length)
-                    Token = Tokens.eofT;
+                }
             }
-                
-            this.location += 2;
-            GetNextToken();
+            Lexeme = "";
         }
 
         /// <summary>
@@ -247,16 +240,9 @@ namespace JavaCompiler
         {
             while (file[this.location] != '\n')
             {
-                GetNextCh(true);
-                if (this.location+1 >= file.Length)
-                {
-                    Token = Tokens.eofT;
-                    return;
-                }
-                    
+                GetNextCh();
             }
-            GetNextCh();
-            GetNextToken();
+            Lexeme = "";
         }
 
         /// <summary>
@@ -267,61 +253,105 @@ namespace JavaCompiler
         /// </summary>
         private void ProcessSymbolToken()
         {
-            char nextCh = (this.location + 1) < file.Length ? file[this.location + 1] : '\0';
             Lexeme += file[this.location];
-
-            if (nextCh == '/' || nextCh == '*' || nextCh == '=' || nextCh == '&' || nextCh == '|')
-                Lexeme += file[this.location + 1];
 
             switch (Lexeme)
             {
-                case "//":
-                    ProcessSingleComment();
-                    break;
-                case "/*":
-                    ProcessMultiComment();
-                    break;
-                case "==":
-                    Token = Tokens.relopT;
-                    Lexeme = "==";
-                    this.location += 2;
-                    break;
-                case ">=":
-                    Token = Tokens.relopT;
-                    Lexeme = ">=";
-                    this.location += 2;
-                    break;
-                case "<=":
-                    Token = Tokens.relopT;
-                    Lexeme = "<=";
-                    this.location += 2;
-                    break;
-                case "!=":
-                    Token = Tokens.noteqT;
-                    Lexeme = "!=";
-                    this.location += 2;
-                    break;
-                case "&&":
-                    Token = Tokens.mulopT;
-                    Lexeme = "&&";
-                    this.location += 2;
-                    break;
-                case "||":
-                    Token = Tokens.addopT;
-                    Lexeme = "!=";
-                    this.location += 2;
+                case "/":
+                    if (CheckNext('/'))
+                        ProcessSingleComment();
+                    else if (CheckNext('*'))
+                        ProcessMultiComment();
+                    else
+                    {
+                        Token = Tokens.mulopT;
+                        GetNextCh();
+                        Lexeme = "/";
+                    }
                     break;
                 case "=":
-                    Token = Tokens.assignopT;
-                    GetNextCh();
-                    break;
-                case "<":
-                    Token = Tokens.relopT;
-                    GetNextCh();
+                    if (CheckNext('='))
+                    {
+                        Token = Tokens.relopT;
+                        GetNextCh(2);
+                        Lexeme = "==";
+                    }
+                    else
+                    {
+                        Token = Tokens.assignopT;
+                        GetNextCh();
+                        Lexeme = "=";
+                    }
                     break;
                 case ">":
-                    Token = Tokens.relopT;
-                    GetNextCh();
+                    if (CheckNext('='))
+                    {
+                        Token = Tokens.relopT;
+                        GetNextCh(2);
+                        Lexeme = ">=";
+                    }
+                    else
+                    {
+                        Token = Tokens.relopT;
+                        GetNextCh();
+                        Lexeme = ">";
+                    }
+                    break;
+                case "<":
+                    if (CheckNext('='))
+                    {
+                        Token = Tokens.relopT;
+                        GetNextCh(2);
+                        Lexeme = "<=";
+                    }
+                    else
+                    {
+                        Token = Tokens.relopT;
+                        GetNextCh();
+                        Lexeme = "<";
+                    }
+                    break;
+                case "!":
+                    if (CheckNext('='))
+                    {
+                        Token = Tokens.relopT;
+                        GetNextCh(2);
+                        Lexeme = "!=";
+                    }
+                    else
+                    {
+                        Token = Tokens.unknownT;
+                        GetNextCh();
+                        Lexeme = "!";
+                    }
+                    break;
+                case "&":
+                    if (CheckNext('&'))
+                    {
+                        Token = Tokens.mulopT;
+                        GetNextCh(2);
+                        Lexeme = "&&";
+                    }
+                    else
+                    {
+                        Token = Tokens.unknownT;
+                        GetNextCh();
+                        Lexeme = "&";
+                    }
+                    break;
+                case "|":
+                    if (CheckNext('|'))
+                    {
+                        Token = Tokens.addopT;
+                        GetNextCh(2);
+                        Lexeme = "||";
+                    }
+                    else
+                    {
+                        Token = Tokens.unknownT;
+                        GetNextCh();
+                        Lexeme = "|";
+                    }
                     break;
                 case "(":
                     Token = Tokens.lparaT;
@@ -370,16 +400,10 @@ namespace JavaCompiler
                 case "*":
                     Token = Tokens.mulopT;
                     GetNextCh();
-                    Lexeme = "*";
-                    break;
-                case "/":
-                    Token = Tokens.mulopT;
-                    GetNextCh();
                     break;
                 case "\"":
-                    Token = Tokens.quoteT;
+                    ProcessLiteralToken();
                     GetNextCh();
-                    literalBool = literalBool ? false : true;
                     break;
                 default:
                     Token = Tokens.unknownT;
@@ -389,6 +413,24 @@ namespace JavaCompiler
         }
 
         /// <summary>
+        /// Name: CheckNextToken
+        /// Input: char v
+        /// Output: bool
+        /// Descprition: Returns true if the next element equals the passed in character.
+        /// </summary>
+        /// <param name="v"></param>
+        /// <returns></returns>
+        private bool CheckNext(char v)
+        {
+            if (this.location + 1 < file.Length)
+                if (file[this.location + 1] == v)
+                    return true;
+
+            return false;
+        }
+
+
+        /// <summary>
         /// Name: ProcessNumToken
         /// Input: N/A
         /// Output: N/A
@@ -396,55 +438,65 @@ namespace JavaCompiler
         /// </summary>
         private void ProcessNumToken()
         {
-            try
+            while (Char.IsDigit(file[this.location]))
             {
+                Lexeme += file[this.location];
+                GetNextCh();
+            }
+
+            if (file[this.location] == '.')
+            {
+                Lexeme += file[this.location];
+                GetNextCh();
+
+                if (!Char.IsDigit(file[this.location]))
+                {
+                    Token = Tokens.unknownT;
+                    return;
+                }
+
                 while (Char.IsDigit(file[this.location]))
                 {
                     Lexeme += file[this.location];
                     GetNextCh();
                 }
 
-                if (file[this.location] == '.')
-                {
-                    Lexeme += file[this.location];
-                    GetNextCh();
-
-                    while (Char.IsDigit(file[this.location]))
-                    {
-                        Lexeme += file[this.location];
-                        GetNextCh();
-                    }
-
-                    ValueR = Convert.ToDouble(Lexeme);
-                }
-                else
-                    Value = Convert.ToInt32(Lexeme);
-
-                Token = Tokens.numT;
+                ValueR = Convert.ToDouble(Lexeme);
             }
-            catch
-            {
-                Token = Tokens.unknownT;
-            }
-            
+            else
+                Value = Convert.ToInt32(Lexeme);
+
+            Token = Tokens.numT;
         }
 
+        /// <summary>
+        /// Name: ProcessLiteralToken
+        /// Input: N/A
+        /// Output: N/A
+        /// Description: Handles a literal token
+        /// </summary>
         private void ProcessLiteralToken()
         {
+            GetNextCh();
+
             while (file[this.location] != '"' && file[this.location] != '\n' && Token != Tokens.eofT)
             {
                 Lexeme += file[this.location];
                 GetNextCh();
             }
 
-            Lexeme = Lexeme.TrimEnd();
-
-            if (file[this.location] == '\n')
-                literalBool = false;
             if (Token != Tokens.eofT)
             {
-                Token = Tokens.strlitT;
-                Literal = Lexeme;
+                if (file[this.location] == '"')
+                {
+                    Lexeme += file[this.location];
+                    Token = Tokens.strlitT;
+                    Literal = Lexeme;
+                }
+                else
+                {
+                    Token = Tokens.unknownT;
+                }
             }
                 
             return;
@@ -463,14 +515,13 @@ namespace JavaCompiler
                 Lexeme += file[this.location];
                 GetNextCh();
             }
+
             if(Lexeme == "System")
-            {
                 while(Char.IsLetterOrDigit(file[this.location]) || file[this.location] == '_' || file[this.location] == '.')
                 {
                     Lexeme += file[this.location];
                     GetNextCh();
                 }
-            }
 
             switch (Lexeme)
             {
@@ -535,9 +586,8 @@ namespace JavaCompiler
                     Token = Tokens.realT;
                     break;
                 default:
-                    Token = Lexeme.Length > 31 || literalBool == true ? Tokens.unknownT : Tokens.idT;
+                    Token = Lexeme.Length > 31 ? Tokens.unknownT : Tokens.idT;
                     break;
-
             }
         }
     }
