@@ -13,33 +13,25 @@ namespace JavaCompiler
         /// <summary>
         /// 
         /// PROJECT: Java Compiler 
-        /// Assignment: #1
+        /// Assignment: #2
         /// Name: Jeff Kurtz
-        /// Description: Takes in java grammer and converts each character(s) to the proper token
-        /// and displays it to the user.
+        /// Description: Takes in java code following the implemented grammer
+        /// and returns an error message if the code does not follow the grammer
+        /// rules.
         /// 
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args)
         {
-            string filepath = ArgsHandler(args);
+            var filepath = ArgsHandler(args);
             if (filepath == null)
                 return;
 
-            string file = File.ReadAllText(filepath);
+            var file = File.ReadAllText(filepath);
 
-            var lexAnalyzer = new LexicalAnalyzer(file);
+            var parser = new Parser(new LexicalAnalyzer(file));
+            parser.Prog();
 
-            while (lexAnalyzer.Token != Tokens.eofT)
-            {
-                lexAnalyzer.GetNextToken();
-                ViewTokens.Add(lexAnalyzer);
-                lexAnalyzer.ResetToken();
-            }
-
-            ViewTokens.View();
-
-            Console.ReadKey();
         }
 
         /// <summary>

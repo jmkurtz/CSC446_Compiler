@@ -94,9 +94,10 @@ namespace JavaCompiler
             unknownT, //Unknown
             periodT, //Period
             quoteT, //Quotations
-            emptyT //Inital Token
+            emptyT, //Inital Token
+            finalT //Final Token
         }
-
+        #region Assignment 1
         /// <summary>
         /// Name: LexicalAnalyzer
         /// Input: string
@@ -179,10 +180,7 @@ namespace JavaCompiler
         /// <param name="newLine"></param>
         private void GetNextCh(int inc = 1)
         {
-            if(this.location+1 < file.Length)
-            {
-                this.location += inc;
-            }
+            this.location += inc;
         }
 
         /// <summary>
@@ -210,24 +208,18 @@ namespace JavaCompiler
         /// </summary>
         private void ProcessMultiComment()
         {
-            while (true)
+            while (this.location < file.Length)
             {
-                if(this.location + 1 < file.Length)
-                    if (file[this.location] == '*' && file[this.location + 1] == '/')
-                    {
-                        GetNextCh(2);
-                        break;
-                    }
-                    else
-                    {
-                        GetNextCh();
-                    }
-                else
+                if (file[this.location] == '*' && file[this.location + 1] == '/')
                 {
+                    GetNextCh(2);
                     break;
                 }
+                else
+                    GetNextCh();
             }
-            Lexeme = "";
+
+            GetNextToken();
         }
 
         /// <summary>
@@ -238,11 +230,10 @@ namespace JavaCompiler
         /// </summary>
         private void ProcessSingleComment()
         {
-            while (file[this.location] != '\n')
-            {
+            while (this.location < file.Length && file[this.location] != '\n')
                 GetNextCh();
-            }
-            Lexeme = "";
+
+            GetNextToken();
         }
 
         /// <summary>
@@ -585,10 +576,16 @@ namespace JavaCompiler
                 case "real":
                     Token = Tokens.realT;
                     break;
+                case "final":
+                    Token = Tokens.finalT;
+                    break;
                 default:
                     Token = Lexeme.Length > 31 ? Tokens.unknownT : Tokens.idT;
                     break;
             }
         }
+        #endregion
+
+       
     }
 }
