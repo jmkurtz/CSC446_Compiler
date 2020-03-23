@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static JavaCompiler.LexicalAnalyzer;
+using static JavaCompiler.SymbolTable;
 
 namespace JavaCompiler
 {
@@ -13,6 +14,15 @@ namespace JavaCompiler
         /// Global declaration of the Lexical Analyzer
         /// </summary>
         public LexicalAnalyzer myLex { get; set; }
+        /// <summary>
+        /// Global declaration of the Symbol Table
+        /// </summary>
+        public SymbolTable mySymTab { get; set; }
+        /// <summary>
+        /// Global declaration of the Depth value
+        /// </summary>
+        public int Depth { get; set; } = 1;
+        public Tokens tmpVarType { get; set; }
 
         /// <summary>
         /// Name: Parser
@@ -22,8 +32,9 @@ namespace JavaCompiler
         /// lexical analyzer and also primes the parser with the first token.
         /// </summary>
         /// <param name="lex"></param>
-        public Parser(LexicalAnalyzer lex)
+        public Parser(LexicalAnalyzer lex, SymbolTable symTab)
         {
+            mySymTab = symTab;
             myLex = lex;
             myLex.GetNextToken(); //Prime the parser
         }
@@ -38,15 +49,34 @@ namespace JavaCompiler
         /// and error.
         /// </summary>
         /// <param name="desired"></param>
-        public void Match(Tokens desired)
+        private void Match(Tokens desired)
         {
             if (myLex.Token == desired)
-            {
                 myLex.GetNextToken();
-            }
             else
-            {
                 ErrorHandler.ThrowError(desired, myLex.Token, myLex.LineNumber);
+        }
+
+        private void increaseDepth()
+        {
+            Depth++;
+        }
+
+        private void decreaseDepth()
+        {
+            mySymTab.WriteTable(this.Depth);
+            mySymTab.DeleteDepth(this.Depth);
+            this.Depth--;
+        }
+
+        private void checkForDuplicate()
+        {
+            TableEntry entry = new TableEntry();
+            entry = mySymTab.LookUp(myLex.Lexeme);
+
+            if(entry != null && entry.depth == Depth)
+            {
+                ErrorHandler.ThrowError("Duplicate Identifier", myLex.LineNumber);
             }
         }
 
@@ -58,6 +88,9 @@ namespace JavaCompiler
         {
             MoreClasses();
             MainClass();
+            Match(Tokens.eofT);
+
+            mySymTab.WriteTable(this.Depth);
         }
 
         /// <summary>
@@ -81,20 +114,49 @@ namespace JavaCompiler
         {
             Match(Tokens.finalT);
             Match(Tokens.classT);
+
+            checkForDuplicate();
+            mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
+            var tmpEntry = mySymTab.LookUp(myLex.Lexeme);
+            //mySymTab.SetEntryType(tmpEntry, EntryType.classEntry);
+
             Match(Tokens.idT);
             Match(Tokens.lcurlyT);
             Match(Tokens.publicT);
             Match(Tokens.staticT);
+
+            tmpVarType = myLex.Token;
             Match(Tokens.voidT);
+
+            checkForDuplicate();
+            mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
+            tmpEntry = mySymTab.LookUp(myLex.Lexeme);
+            //mySymTab.SetFunction(tmpEntry, EntryType.functionEntry, tmpVarType);
+
             Match(Tokens.mainT);
+
+            increaseDepth();
+
             Match(Tokens.lparaT);
+
+            tmpVarType = myLex.Token;
             Match(Tokens.StringT);
             Match(Tokens.lbracketT);
             Match(Tokens.rbracketT);
+
+            checkForDuplicate();
+            mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
+            tmpEntry = mySymTab.LookUp(myLex.Lexeme);
+            //mySymTab.SetEntryType(tmpEntry, EntryType.variableEntry);
+            //mySymTab.SetVarType(tmpEntry, tmpVarType);
+
             Match(Tokens.idT);
             Match(Tokens.rparaT);
             Match(Tokens.lcurlyT);
             SeqOfStatements();
+
+            decreaseDepth();
+
             Match(Tokens.rcurlyT);
             Match(Tokens.rcurlyT);
         }
@@ -106,6 +168,12 @@ namespace JavaCompiler
         private void ClassDecl()
         {
             Match(Tokens.classT);
+
+            checkForDuplicate();
+            mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
+            var tmpEntry = mySymTab.LookUp(myLex.Lexeme);
+            //mySymTab.SetEntryType(tmpEntry, EntryType.classEntry);
+
             Match(Tokens.idT);
 
             if (myLex.Token == Tokens.lcurlyT)
@@ -140,6 +208,13 @@ namespace JavaCompiler
             {
                 Match(Tokens.finalT);
                 Type();
+
+                checkForDuplicate();
+                mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
+                var tmpEntry = mySymTab.LookUp(myLex.Lexeme);
+                //mySymTab.SetEntryType(tmpEntry, EntryType.constEntry);
+                //mySymTab.SetVarType(tmpEntry, tmpVarType);
+
                 Match(Tokens.idT);
                 Match(Tokens.assignopT);
                 Match(Tokens.numT);
@@ -166,12 +241,25 @@ namespace JavaCompiler
         {
             if (myLex.Token == Tokens.idT)
             {
+                checkForDuplicate();
+                mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
+                var tmpEntry = mySymTab.LookUp(myLex.Lexeme);
+                //mySymTab.SetEntryType(tmpEntry, EntryType.variableEntry);
+                //mySymTab.SetVarType(tmpEntry, tmpVarType);
+
                 Match(Tokens.idT);
                 IdentifierList();
             }
             else if (myLex.Token == Tokens.commaT)
             {
                 Match(Tokens.commaT);
+
+                checkForDuplicate();
+                mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
+                var tmpEntry = mySymTab.LookUp(myLex.Lexeme);
+                //mySymTab.SetEntryType(tmpEntry, EntryType.variableEntry);
+                //mySymTab.SetVarType(tmpEntry, tmpVarType);
+
                 Match(Tokens.idT);
                 IdentifierList();
             }
@@ -188,6 +276,8 @@ namespace JavaCompiler
         /// </summary>
         private void Type()
         {
+            Tokens varType = myLex.Token;
+
             if (myLex.Token == Tokens.intT)
             {
                 Match(Tokens.intT);
@@ -224,7 +314,17 @@ namespace JavaCompiler
             {
                 Match(Tokens.publicT);
                 Type();
+
+                checkForDuplicate();
+                mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
+                var tmpEntry = mySymTab.LookUp(myLex.Lexeme);
+                //mySymTab.SetEntryType(tmpEntry, EntryType.functionEntry);
+                //mySymTab.SetVarType(tmpEntry, tmpVarType);
+
                 Match(Tokens.idT);
+
+                increaseDepth();
+
                 Match(Tokens.lparaT);
                 FormalList();
                 Match(Tokens.rparaT);
@@ -234,6 +334,9 @@ namespace JavaCompiler
                 Match(Tokens.returnT);
                 Expr();
                 Match(Tokens.semiT);
+
+                decreaseDepth();
+
                 Match(Tokens.rcurlyT);
                 MethodDecl();
             }
@@ -248,6 +351,14 @@ namespace JavaCompiler
             if (Types.Contains(myLex.Token))
             {
                 Type();
+
+                checkForDuplicate();
+                mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
+                var tmpEntry = mySymTab.LookUp(myLex.Lexeme);
+                //mySymTab.SetEntryType(tmpEntry, EntryType.variableEntry);
+                //mySymTab.SetVarType(tmpEntry, tmpVarType);
+                //mySymTab.AddFormalListTypes(tmpEntry, myLex.Token);
+
                 Match(Tokens.idT);
                 FormalRest();
             }
@@ -263,6 +374,14 @@ namespace JavaCompiler
             {
                 Match(Tokens.commaT);
                 Type();
+
+                checkForDuplicate();
+                mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
+                var tmpEntry = mySymTab.LookUp(myLex.Lexeme);
+                //mySymTab.SetEntryType(tmpEntry, EntryType.variableEntry);
+                //mySymTab.SetVarType(tmpEntry, tmpVarType);
+                //mySymTab.AddFormalListTypes(tmpEntry, myLex.Token);
+
                 Match(Tokens.idT);
                 FormalRest();
             }
