@@ -14,11 +14,12 @@ namespace JavaCompiler
         /// <summary>
         /// 
         /// PROJECT: Java Compiler 
-        /// Assignment: #2
+        /// Assignment: #5
         /// Name: Jeff Kurtz
         /// Description: Takes in java code following the implemented grammer
         /// and returns an error message if the code does not follow the grammer
-        /// rules.
+        /// rules, while storing variables, functions, constants, and classes in
+        /// the symbol table
         /// 
         /// </summary>
         /// <param name="args"></param>
@@ -33,60 +34,8 @@ namespace JavaCompiler
             var parser = new Parser(new LexicalAnalyzer(file), new SymbolTable());
             parser.Prog();
 
-            //var symTab = new SymbolTable();
-            //Console.WriteLine("----------------------------------");
-            //Console.WriteLine("INSERT:");
-            //Console.WriteLine("----------------------------------");
-            //symTab.Insert("id1", Tokens.idT, 1);
-            //symTab.Insert("id2", Tokens.idT, 1);
-            //symTab.Insert("id3", Tokens.idT, 2);
-            //symTab.Insert("id4", Tokens.idT, 2);
-            //symTab.Insert("id5", Tokens.idT, 3);
-            //symTab.Insert("id6", Tokens.idT, 3);
-            //symTab.Insert("id7", Tokens.idT, 1);
-            //symTab.Insert("id7", Tokens.idT, 1);
-            //symTab.Insert("id7", Tokens.idT, 1);
-            //symTab.Insert("id7", Tokens.idT, 1);
-            //symTab.Insert("id7", Tokens.idT, 1);
-            //symTab.Insert("id8", Tokens.idT, 2);
-            //symTab.Insert("id9", Tokens.idT, 3);
-            //symTab.Insert("id10", Tokens.idT, 2);
-            //symTab.Insert("id10", Tokens.idT, 3);
 
-            //Console.WriteLine("----------------------------------");
-            //Console.WriteLine("LOOK UP: ");
-            //Console.WriteLine("----------------------------------");
-            //var id2 = symTab.LookUp("id2");
-            //Console.WriteLine("Look up id2 -> {0}", id2.Lexeme);
-
-            //var id9 = symTab.LookUp("id9");
-            //Console.WriteLine("Look up id9 -> {0}", id9.Lexeme);
-
-            //var id15 = symTab.LookUp("id15");
-            //Console.WriteLine("Look up id2 -> {0}", id15 != null ? id15.Lexeme : "DNE");
-
-            //Console.WriteLine("----------------------------------");
-            //Console.WriteLine("WRITE TABLE");
-            //Console.WriteLine("----------------------------------");
-            //symTab.WriteTable(2);
-
-            //Console.WriteLine("----------------------------------");
-            //Console.WriteLine("DELETE TABLE");
-            //Console.WriteLine("----------------------------------");
-            //symTab.DeleteDepth(2);
-
-            //Console.WriteLine("----------------------------------");
-            //Console.WriteLine("WRITE DELETED TABLE");
-            //Console.WriteLine("----------------------------------");
-            //symTab.WriteTable(2);
-
-            //Console.WriteLine("----------------------------------");
-            //Console.WriteLine("WRITE TABLE");
-            //Console.WriteLine("----------------------------------");
-            //symTab.WriteTable(1);
-
-
-            //Console.ReadKey();
+            Console.ReadKey();
         }
 
         /// <summary>

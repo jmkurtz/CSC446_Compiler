@@ -10,6 +10,7 @@ namespace JavaCompiler
 {
     class Parser
     {
+        #region Global Variables
         /// <summary>
         /// Global declaration of the Lexical Analyzer
         /// </summary>
@@ -22,7 +23,35 @@ namespace JavaCompiler
         /// Global declaration of the Depth value
         /// </summary>
         public int Depth { get; set; } = 1;
-        public Tokens tmpVarType { get; set; }
+        /// <summary>
+        /// Global variable that stores the variable names inside a class to be stored in the symbol table
+        /// </summary>
+        public List<string> VarNames { get; set; } = new List<string>();
+        /// <summary>
+        /// Global variable that stores the method names inside a class to be stored in the symbol table
+        /// </summary>
+        public List<string> MethodNames { get; set; } = new List<string>();
+        /// <summary>
+        /// Global variable that stores the size of the local variables either to the class or method being stored in the symbol table
+        /// </summary>
+        public int SizeOfLocal { get; set; } = 0;
+        /// <summary>
+        /// Global variable that stores the number of parameters that have been stored in the symbol table for that function
+        /// </summary>
+        public int NumberOfParameters { get; set; } = 0;
+        /// <summary>
+        /// Global variable that stores the parameter types for the function to be stored in the symbol table
+        /// </summary>
+        public List<Tokens> ParameterTypes { get; set; }
+        /// <summary>
+        /// Global variable that stores the offset for the variable to be stored in the symbol table
+        /// </summary>
+        public int Offset { get; set; } = 0;
+        /// <summary>
+        /// Global variable that stores the type of the variable to be stored in the symbol table
+        /// </summary>
+        public Tokens VariableType { get; set; }
+        #endregion
 
         /// <summary>
         /// Name: Parser
@@ -39,7 +68,7 @@ namespace JavaCompiler
             myLex.GetNextToken(); //Prime the parser
         }
 
-        #region Assignment 2
+        #region Helper Methods
         /// <summary>
         /// Name: Match
         /// Input: Tokens
@@ -57,18 +86,30 @@ namespace JavaCompiler
                 ErrorHandler.ThrowError(desired, myLex.Token, myLex.LineNumber);
         }
 
+        /// <summary>
+        /// Helper method that increments the depth
+        /// </summary>
         private void increaseDepth()
         {
             Depth++;
         }
 
+        /// <summary>
+        /// Helper method that decrements the depth and outputs everything to the user that is being removed from the symbol table
+        /// </summary>
         private void decreaseDepth()
         {
+            Console.WriteLine("Lexemes at Depth:" + this.Depth.ToString());
             mySymTab.WriteTable(this.Depth);
+            Console.WriteLine();
+
             mySymTab.DeleteDepth(this.Depth);
             this.Depth--;
         }
 
+        /// <summary>
+        /// Private helper method that checks if the symbol exists prior to inserting the symbol
+        /// </summary>
         private void checkForDuplicate()
         {
             TableEntry entry = new TableEntry();
@@ -81,6 +122,23 @@ namespace JavaCompiler
         }
 
         /// <summary>
+        /// Helper method that returns the size based on the variable type
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        private int GetSize(Tokens type)
+        {
+            if (type == Tokens.intT)
+                return 2;
+            if (type == Tokens.booleanT)
+                return 1;
+
+            return 0;
+        }
+        #endregion
+
+        #region Grammar Methods
+        /// <summary>
         /// Name: Prog
         /// Description: Is the beginning of the grammar that asks for classes and the main class
         /// </summary>
@@ -90,6 +148,7 @@ namespace JavaCompiler
             MainClass();
             Match(Tokens.eofT);
 
+            Console.WriteLine("Lexemes at Depth:" + this.Depth.ToString());
             mySymTab.WriteTable(this.Depth);
         }
 
@@ -112,26 +171,38 @@ namespace JavaCompiler
         /// </summary>
         private void MainClass()
         {
+            this.SizeOfLocal = 0;
+            this.Offset = 0;
+            this.MethodNames = new List<string>();
+            this.VarNames = new List<string>();
+
             Match(Tokens.finalT);
             Match(Tokens.classT);
 
             checkForDuplicate();
             mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
-            var tmpEntry = mySymTab.LookUp(myLex.Lexeme);
-            //mySymTab.SetEntryType(tmpEntry, EntryType.classEntry);
+            var className = myLex.Lexeme;
 
             Match(Tokens.idT);
+
+            increaseDepth();
+
             Match(Tokens.lcurlyT);
+
+            var classSize = this.SizeOfLocal;
+            this.SizeOfLocal = 0;
+            this.Offset = 0;
+
             Match(Tokens.publicT);
             Match(Tokens.staticT);
 
-            tmpVarType = myLex.Token;
+            var methodReturnType = myLex.Token;
             Match(Tokens.voidT);
 
             checkForDuplicate();
             mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
-            tmpEntry = mySymTab.LookUp(myLex.Lexeme);
-            //mySymTab.SetFunction(tmpEntry, EntryType.functionEntry, tmpVarType);
+            var methodName = myLex.Lexeme;
+            this.MethodNames.Add(myLex.Lexeme);
 
             Match(Tokens.mainT);
 
@@ -139,26 +210,28 @@ namespace JavaCompiler
 
             Match(Tokens.lparaT);
 
-            tmpVarType = myLex.Token;
             Match(Tokens.StringT);
             Match(Tokens.lbracketT);
             Match(Tokens.rbracketT);
-
-            checkForDuplicate();
-            mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
-            tmpEntry = mySymTab.LookUp(myLex.Lexeme);
-            //mySymTab.SetEntryType(tmpEntry, EntryType.variableEntry);
-            //mySymTab.SetVarType(tmpEntry, tmpVarType);
-
             Match(Tokens.idT);
             Match(Tokens.rparaT);
             Match(Tokens.lcurlyT);
             SeqOfStatements();
 
+            var methodSize = this.SizeOfLocal;
+            this.SizeOfLocal = 0;
+
+            mySymTab.SetFunction(mySymTab.LookUp(methodName), methodSize, this.NumberOfParameters, methodReturnType, this.ParameterTypes);
+            mySymTab.SetClass(mySymTab.LookUp(className), classSize, this.MethodNames, this.VarNames);
+
             decreaseDepth();
 
             Match(Tokens.rcurlyT);
+
+            decreaseDepth();
+
             Match(Tokens.rcurlyT);
+
         }
 
         /// <summary>
@@ -167,30 +240,57 @@ namespace JavaCompiler
         /// </summary>
         private void ClassDecl()
         {
+            this.SizeOfLocal = 0;
+            this.Offset = 0;
+            this.MethodNames = new List<string>();
+            this.VarNames = new List<string>();
+
             Match(Tokens.classT);
 
             checkForDuplicate();
             mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
-            var tmpEntry = mySymTab.LookUp(myLex.Lexeme);
-            //mySymTab.SetEntryType(tmpEntry, EntryType.classEntry);
+            var className = myLex.Lexeme;
 
             Match(Tokens.idT);
 
             if (myLex.Token == Tokens.lcurlyT)
             {
+                increaseDepth();
+
                 Match(Tokens.lcurlyT);
                 VarDecl();
+
+                var classSize = this.SizeOfLocal;
+                this.SizeOfLocal = 0;
+
                 MethodDecl();
+
+                decreaseDepth();
+
                 Match(Tokens.rcurlyT);
+
+                mySymTab.SetClass(mySymTab.LookUp(className), classSize, this.MethodNames, this.VarNames);
             }
             else if (myLex.Token == Tokens.extendsT)
             {
                 Match(Tokens.extendsT);
                 Match(Tokens.idT);
+
+                increaseDepth();
+
                 Match(Tokens.lcurlyT);
                 VarDecl();
+
+                var classSize = this.SizeOfLocal;
+                this.SizeOfLocal = 0;
+
                 MethodDecl();
+
+                decreaseDepth();
+
                 Match(Tokens.rcurlyT);
+
+                mySymTab.SetClass(mySymTab.LookUp(className), classSize, this.MethodNames, this.VarNames);
             }
             else
             {
@@ -204,31 +304,46 @@ namespace JavaCompiler
         /// </summary>
         private void VarDecl()
         {
+            //this.SizeOfLocal = 0;
+
             if (myLex.Token == Tokens.finalT)
             {
                 Match(Tokens.finalT);
+
+                var varType = myLex.Token;
+                var size = this.GetSize(varType);
                 Type();
 
                 checkForDuplicate();
                 mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
-                var tmpEntry = mySymTab.LookUp(myLex.Lexeme);
-                //mySymTab.SetEntryType(tmpEntry, EntryType.constEntry);
-                //mySymTab.SetVarType(tmpEntry, tmpVarType);
+                var varName = myLex.Lexeme;
+                this.VarNames.Add(varName);
 
                 Match(Tokens.idT);
                 Match(Tokens.assignopT);
+
+                var value = myLex.Lexeme;
                 Match(Tokens.numT);
                 Match(Tokens.semiT);
+
+                this.SizeOfLocal += size;
+                this.VarNames.Add(varName);
+                mySymTab.SetConstant(mySymTab.LookUp(varName), varType, this.Offset, size, value);
+                this.Offset += size;
+
                 VarDecl();
             }
             else if (Types.Contains(myLex.Token))
             {
+                this.VariableType = myLex.Token;
                 Type();
+
                 if (myLex.Token == Tokens.idT)
                     IdentifierList();
                 else
                     ErrorHandler.ThrowError(Tokens.idT, myLex.Token, myLex.LineNumber);
                 Match(Tokens.semiT);
+
                 VarDecl();
             }
         }
@@ -239,13 +354,17 @@ namespace JavaCompiler
         /// </summary>
         private void IdentifierList()
         {
+            var size = this.GetSize(this.VariableType);
+
             if (myLex.Token == Tokens.idT)
             {
                 checkForDuplicate();
                 mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
-                var tmpEntry = mySymTab.LookUp(myLex.Lexeme);
-                //mySymTab.SetEntryType(tmpEntry, EntryType.variableEntry);
-                //mySymTab.SetVarType(tmpEntry, tmpVarType);
+
+                this.SizeOfLocal += size;
+                this.VarNames.Add(myLex.Lexeme);
+                mySymTab.SetVariable(mySymTab.LookUp(myLex.Lexeme), this.VariableType, this.Offset, size);
+                this.Offset += size;
 
                 Match(Tokens.idT);
                 IdentifierList();
@@ -256,9 +375,11 @@ namespace JavaCompiler
 
                 checkForDuplicate();
                 mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
-                var tmpEntry = mySymTab.LookUp(myLex.Lexeme);
-                //mySymTab.SetEntryType(tmpEntry, EntryType.variableEntry);
-                //mySymTab.SetVarType(tmpEntry, tmpVarType);
+
+                this.SizeOfLocal += size;
+                this.VarNames.Add(myLex.Lexeme);
+                mySymTab.SetVariable(mySymTab.LookUp(myLex.Lexeme), this.VariableType, this.Offset, size);
+                this.Offset += size;
 
                 Match(Tokens.idT);
                 IdentifierList();
@@ -310,16 +431,22 @@ namespace JavaCompiler
         /// </summary>
         private void MethodDecl()
         {
+            this.SizeOfLocal = 0;
+            this.NumberOfParameters = 0;
+            this.Offset = 0;
+            this.ParameterTypes = new List<Tokens>();
+
             if(myLex.Token == Tokens.publicT)
             {
                 Match(Tokens.publicT);
+
+                var returnType = myLex.Token;
                 Type();
 
                 checkForDuplicate();
                 mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
-                var tmpEntry = mySymTab.LookUp(myLex.Lexeme);
-                //mySymTab.SetEntryType(tmpEntry, EntryType.functionEntry);
-                //mySymTab.SetVarType(tmpEntry, tmpVarType);
+                var methodName = myLex.Lexeme;
+                this.MethodNames.Add(methodName);
 
                 Match(Tokens.idT);
 
@@ -338,6 +465,9 @@ namespace JavaCompiler
                 decreaseDepth();
 
                 Match(Tokens.rcurlyT);
+
+                mySymTab.SetFunction(mySymTab.LookUp(methodName), this.SizeOfLocal, this.NumberOfParameters, returnType, this.ParameterTypes);
+
                 MethodDecl();
             }
         }
@@ -350,16 +480,23 @@ namespace JavaCompiler
         {
             if (Types.Contains(myLex.Token))
             {
+                this.NumberOfParameters++;
+                this.VariableType = myLex.Token;
+                var size = this.GetSize(this.VariableType);
+                this.ParameterTypes.Add(this.VariableType);
                 Type();
 
                 checkForDuplicate();
                 mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
-                var tmpEntry = mySymTab.LookUp(myLex.Lexeme);
-                //mySymTab.SetEntryType(tmpEntry, EntryType.variableEntry);
-                //mySymTab.SetVarType(tmpEntry, tmpVarType);
-                //mySymTab.AddFormalListTypes(tmpEntry, myLex.Token);
+                var paraName = myLex.Lexeme;
+                this.VarNames.Add(paraName);
 
                 Match(Tokens.idT);
+
+                this.SizeOfLocal += size;
+                mySymTab.SetVariable(mySymTab.LookUp(paraName), this.VariableType, this.Offset, size);
+                this.Offset += size;
+
                 FormalRest();
             }
         }
@@ -373,16 +510,23 @@ namespace JavaCompiler
             if (myLex.Token == Tokens.commaT)
             {
                 Match(Tokens.commaT);
+                this.NumberOfParameters++;
+                this.VariableType = myLex.Token;
+                var size = this.GetSize(this.VariableType);
+                this.ParameterTypes.Add(this.VariableType);
                 Type();
 
                 checkForDuplicate();
                 mySymTab.Insert(myLex.Lexeme, myLex.Token, this.Depth);
-                var tmpEntry = mySymTab.LookUp(myLex.Lexeme);
-                //mySymTab.SetEntryType(tmpEntry, EntryType.variableEntry);
-                //mySymTab.SetVarType(tmpEntry, tmpVarType);
-                //mySymTab.AddFormalListTypes(tmpEntry, myLex.Token);
+                var paraName = myLex.Lexeme;
+                this.VarNames.Add(paraName);
 
                 Match(Tokens.idT);
+
+                this.SizeOfLocal += size;
+                mySymTab.SetVariable(mySymTab.LookUp(paraName), this.VariableType, this.Offset, size);
+                this.Offset += size;
+
                 FormalRest();
             }
         }

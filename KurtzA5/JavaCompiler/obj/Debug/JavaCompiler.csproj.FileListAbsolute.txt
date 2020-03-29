@@ -28,3 +28,9 @@ C:\Repos\GitHub_Repos\CSC446_Compiler\KurtzA3\JavaCompiler\bin\Debug\JavaCompile
 C:\Repos\GitHub_Repos\CSC446_Compiler\KurtzA3\JavaCompiler\obj\Debug\JavaCompiler.csprojAssemblyReference.cache
 C:\Repos\GitHub_Repos\CSC446_Compiler\KurtzA3\JavaCompiler\obj\Debug\JavaCompiler.exe
 C:\Repos\GitHub_Repos\CSC446_Compiler\KurtzA3\JavaCompiler\obj\Debug\JavaCompiler.pdb
+C:\Repos\CSC446_Compiler\KurtzA4\JavaCompiler\obj\Debug\JavaCompiler.csprojAssemblyReference.cache
+C:\Repos\CSC446_Compiler\KurtzA4\JavaCompiler\obj\Debug\JavaCompiler.exe
+C:\Repos\CSC446_Compiler\KurtzA4\JavaCompiler\obj\Debug\JavaCompiler.pdb
+C:\Repos\CSC446_Compiler\KurtzA4\JavaCompiler\bin\Debug\JavaCompiler.exe.config
+C:\Repos\CSC446_Compiler\KurtzA4\JavaCompiler\bin\Debug\JavaCompiler.exe
+C:\Repos\CSC446_Compiler\KurtzA4\JavaCompiler\bin\Debug\JavaCompiler.pdb
