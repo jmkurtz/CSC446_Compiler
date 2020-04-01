@@ -14,12 +14,12 @@ namespace JavaCompiler
         /// <summary>
         /// 
         /// PROJECT: Java Compiler 
-        /// Assignment: #5
+        /// Assignment: #6
         /// Name: Jeff Kurtz
         /// Description: Takes in java code following the implemented grammer
         /// and returns an error message if the code does not follow the grammer
         /// rules, while storing variables, functions, constants, and classes in
-        /// the symbol table
+        /// the symbol table. Grammar rules for a sequence of statments is implemented
         /// 
         /// </summary>
         /// <param name="args"></param>
@@ -34,7 +34,7 @@ namespace JavaCompiler
             var parser = new Parser(new LexicalAnalyzer(file), new SymbolTable());
             parser.Prog();
 
-
+            Console.WriteLine("Program Complete!");
             Console.ReadKey();
         }
 

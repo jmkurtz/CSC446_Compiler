@@ -99,10 +99,6 @@ namespace JavaCompiler
         /// </summary>
         private void decreaseDepth()
         {
-            Console.WriteLine("Lexemes at Depth:" + this.Depth.ToString());
-            mySymTab.WriteTable(this.Depth);
-            Console.WriteLine();
-
             mySymTab.DeleteDepth(this.Depth);
             this.Depth--;
         }
@@ -115,7 +111,7 @@ namespace JavaCompiler
             TableEntry entry = new TableEntry();
             entry = mySymTab.LookUp(myLex.Lexeme);
 
-            if(entry != null && entry.depth == Depth)
+            if (entry != null && entry.depth == Depth)
             {
                 ErrorHandler.ThrowError("Duplicate Identifier", myLex.LineNumber);
             }
@@ -147,9 +143,6 @@ namespace JavaCompiler
             MoreClasses();
             MainClass();
             Match(Tokens.eofT);
-
-            Console.WriteLine("Lexemes at Depth:" + this.Depth.ToString());
-            mySymTab.WriteTable(this.Depth);
         }
 
         /// <summary>
@@ -436,7 +429,7 @@ namespace JavaCompiler
             this.Offset = 0;
             this.ParameterTypes = new List<Tokens>();
 
-            if(myLex.Token == Tokens.publicT)
+            if (myLex.Token == Tokens.publicT)
             {
                 Match(Tokens.publicT);
 
@@ -533,19 +526,224 @@ namespace JavaCompiler
 
         /// <summary>
         /// Name: SeqOfStatements
-        /// Description: Implements the grammar for SequenceOfStatements
+        /// Description: Implements grammer rules - SeqOfStatments -> Statement ; StatTail | empty
         /// </summary>
         private void SeqOfStatements()
+        {
+            if (myLex.Token == Tokens.idT)
+            {
+                Statement();
+                Match(Tokens.semiT);
+                StatTail();
+            }
+            return;
+        }
+
+        /// <summary>
+        /// Name: StatTail
+        /// Description: Implements grammer rules - StatTail -> Statement ; StatTail | empty
+        /// </summary>
+        private void StatTail()
+        {
+            if (myLex.Token == Tokens.idT)
+            {
+                Statement();
+                Match(Tokens.semiT);
+                StatTail();
+            }
+            return;
+        }
+
+        /// <summary>
+        /// Name: Statement
+        /// Description: Implements grammer rules - Statement -> AssignStat | IOStat
+        /// </summary>
+        private void Statement()
+        {
+            if (myLex.Token == Tokens.idT)
+            {
+                AssignStat();
+            }
+            else
+            {
+                IOStat();
+            }
+            return;
+        }
+
+        /// <summary>
+        /// Name: AssignStat
+        /// Description: Implements grammer rules - AssignStat -> idt = Expr
+        /// </summary>
+        private void AssignStat()
+        {
+            Match(Tokens.idT);
+            Match(Tokens.assignopT);
+            Expr();
+            return;
+        }
+
+        /// <summary>
+        /// Name: IOStat
+        /// Description: Implements grammer rules - IOStat -> empty
+        /// </summary>
+        private void IOStat()
         {
             return;
         }
 
         /// <summary>
         /// Name: Expr
-        /// Description: Implements the grammar for Expression
+        /// Description: Implements the grammar rules - Relation | empty
         /// </summary>
         private void Expr()
         {
+            if (myLex.Token == Tokens.idT || myLex.Token == Tokens.numT || myLex.Token == Tokens.lparaT || myLex.Token == Tokens.notT || myLex.Token == Tokens.addopT || myLex.Token == Tokens.trueT || myLex.Token == Tokens.falseT)
+            {
+                Relation();
+            }
+            return;
+        }
+
+        /// <summary>
+        /// Name: Relation
+        /// Description: Implements grammer rules - Relation -> SimpleExpr
+        /// </summary>
+        private void Relation()
+        {
+            SimpleExpr();
+            return;
+        }
+
+        /// <summary>
+        /// Name: SimpleExpr
+        /// Description: Implements grammer rules - SimpleExpr -> Term MoreTerm
+        /// </summary>
+        private void SimpleExpr()
+        {
+            Term();
+            MoreTerm();
+            return;
+        }
+
+        /// <summary>
+        /// Name: Term
+        /// Description: Implements grammer rules - Term -> Factor MoreFactor
+        /// </summary>
+        private void Term()
+        {
+            Factor();
+            MoreFactor();
+            return;
+        }
+
+        /// <summary>
+        /// Name: MoreTerm
+        /// Description: Implements grammer rules - MoreTerm -> Addop Term MoreTerm | empty
+        /// </summary>
+        private void MoreTerm()
+        {
+            if (myLex.Token == Tokens.addopT)
+            {
+                Addop();
+                Term();
+                MoreTerm();
+            }
+            return;
+        }
+
+        /// <summary>
+        /// Name: Factor
+        /// Description: Implements grammer rules - Factor -> id | num | ( Expr ) | ! Factor | true | false
+        /// </summary>
+        private void Factor()
+        {
+            if (myLex.Token == Tokens.idT)
+                Match(Tokens.idT);
+            else if (myLex.Token == Tokens.numT)
+                Match(Tokens.numT);
+            else if (myLex.Token == Tokens.lparaT)
+            {
+                Match(Tokens.lparaT);
+                Expr();
+                Match(Tokens.rparaT);
+            }
+            else if (myLex.Token == Tokens.notT)
+            {
+                Match(Tokens.notT);
+                Factor();
+            }
+            else if (myLex.Token == Tokens.addopT)
+            {
+                SignOp();
+                Factor();
+            }
+            else if (myLex.Token == Tokens.trueT)
+                Match(Tokens.trueT);
+            else if (myLex.Token == Tokens.falseT)
+                Match(Tokens.falseT);
+
+            return;
+        }
+
+        /// <summary>
+        /// Name: MoreFactor
+        /// Description: Implements grammer rules - MoreFactor -> Mulop Factor MoreFactor | empty
+        /// </summary>
+        private void MoreFactor()
+        {
+            if (myLex.Token == Tokens.mulopT)
+            {
+                Mulop();
+                Factor();
+                MoreFactor();
+            }
+            return;
+        }
+
+        /// <summary>
+        /// Name: Addop
+        /// Description: Implements grammer rules - Addop -> + | - | ||
+        /// </summary>
+        private void Addop()
+        {
+            if(myLex.Token == Tokens.addopT)
+            {
+                if(myLex.Lexeme == "+")
+                    Match(Tokens.addopT);
+                else if (myLex.Lexeme == "-")
+                    Match(Tokens.addopT);
+                else if (myLex.Lexeme == "||")
+                    Match(Tokens.addopT);
+            }
+            return;
+        }
+
+        /// <summary>
+        /// Name: Mulop
+        /// Description: Implements grammer rules - Mulop -> * | / | &&
+        /// </summary>
+        private void Mulop()
+        {
+            if (myLex.Token == Tokens.mulopT)
+            {
+                if (myLex.Lexeme == "*")
+                    Match(Tokens.mulopT);
+                else if (myLex.Lexeme == "/")
+                    Match(Tokens.mulopT);
+                else if (myLex.Lexeme == "&&")
+                    Match(Tokens.mulopT);
+            }
+            return;
+        }
+
+        /// <summary>
+        /// Name: SignOp 
+        /// Description: Implements grammer rules - SignOp -> -
+        /// </summary>
+        private void SignOp()
+        {
+            Match(Tokens.addopT);
             return;
         }
         #endregion

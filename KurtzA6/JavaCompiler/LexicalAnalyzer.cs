@@ -95,7 +95,8 @@ namespace JavaCompiler
             periodT, //Period
             quoteT, //Quotations
             emptyT, //Inital Token
-            finalT //Final Token
+            finalT, //Final Token
+            notT
         }
         #region Assignment 1
         /// <summary>
@@ -311,7 +312,7 @@ namespace JavaCompiler
                     }
                     else
                     {
-                        Token = Tokens.unknownT;
+                        Token = Tokens.notT;
                         GetNextCh();
                         Lexeme = "!";
                     }
